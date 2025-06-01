@@ -1,5 +1,6 @@
 // src/services/db.ts
-import sql, { ConnectionPool } from 'mssql';
+import sql, { ConnectionPool } from "mssql";
+import { Informe } from "../models/Informe";
 
 const sqlConfig: sql.config = {
   user: process.env.DB_USER!,
@@ -8,7 +9,7 @@ const sqlConfig: sql.config = {
   server: process.env.DB_HOST!,
   port: Number(process.env.DB_PORT || 1433),
   options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
+    encrypt: process.env.DB_ENCRYPT === "true",
     trustServerCertificate: true,
   },
 };
@@ -22,7 +23,7 @@ export const getSqlPool = async (): Promise<ConnectionPool> => {
 };
 
 /**
- * Este método invoca el SP usp_ObtenerFiscalPorCorreoYContrasena. 
+ * Este método invoca el SP usp_ObtenerFiscalPorCorreoYContrasena.
  * Recibe:
  *   - correo: string
  *   - contrasenaHash: string  (el hash que envía el cliente)
@@ -36,11 +37,11 @@ export const obtenerFiscalPorCorreoYContrasena = async (
   const request = pool.request();
 
   // Par�metros que espera el SP según tu definición:
-  request.input('CorreoElectronico', sql.NVarChar(100), correo);
-  request.input('Contrasena', sql.NVarChar(255), contrasenaHash);
+  request.input("CorreoElectronico", sql.NVarChar(100), correo);
+  request.input("Contrasena", sql.NVarChar(255), contrasenaHash);
 
   // Ejecutamos el SP
-  const result = await request.execute('usp_ObtenerFiscalPorCorreoYContrasena');
+  const result = await request.execute("usp_ObtenerFiscalPorCorreoYContrasena");
   // console.table(result.recordset)
   // recordset es el listado de filas devueltas
   return result.recordset;
@@ -60,15 +61,15 @@ export const spCrearCasoPorCorreo = async (
   const pool: ConnectionPool = await getSqlPool();
   const request = pool.request();
 
-  request.input('CorreoElectronico', sql.NVarChar(100), correoElectronico);
-  request.input('Descripcion', sql.NVarChar(sql.MAX), descripcion);
-  request.output('NuevoCasoID', sql.Int);
+  request.input("CorreoElectronico", sql.NVarChar(100), correoElectronico);
+  request.input("Descripcion", sql.NVarChar(sql.MAX), descripcion);
+  request.output("NuevoCasoID", sql.Int);
 
-  const result = await request.execute('dbo.usp_CrearCasoPorCorreo');
+  const result = await request.execute("dbo.usp_CrearCasoPorCorreo");
 
   const nuevoID = result.output.NuevoCasoID as number;
   if (!nuevoID) {
-    throw new Error('No se pudo obtener el ID del nuevo caso.');
+    throw new Error("No se pudo obtener el ID del nuevo caso.");
   }
 
   return nuevoID;
@@ -86,9 +87,39 @@ export const spObtenerCasosPorCorreo = async (
   const pool: ConnectionPool = await getSqlPool();
   const request = pool.request();
 
-  request.input('CorreoElectronico', sql.NVarChar(100), correoElectronico);
+  request.input("CorreoElectronico", sql.NVarChar(100), correoElectronico);
 
-  const result = await request.execute('dbo.usp_ObtenerCasosPorCorreo');
+  const result = await request.execute("dbo.usp_ObtenerCasosPorCorreo");
 
   return result.recordset;
+};
+
+/**
+ * Llama al procedimiento almacenado dbo.usp_AgregarInformeAlCaso.
+ * Recibe:
+ *   - correoElectronico: string
+ *   - casoID: number
+ *   - tipoInforme: string
+ *   - descripcionBreve: string
+ * Devuelve el nuevo InformeID generado (INT).
+ */
+export const spAgregarInformeAlCaso = async (informe: Informe): Promise<number> => {
+  const pool: ConnectionPool = await getSqlPool();
+  const request = pool.request();
+
+  request.input("CorreoElectronico", sql.NVarChar(100), informe.correoElectronico);
+  request.input("CasoID", sql.Int, informe.casoID);
+  request.input("TipoInforme", sql.NVarChar(100), informe.TipoInforme);
+  request.input("DescripcionBreve", sql.NVarChar(255), informe.DescripcionBreve);
+  request.input("Estado", sql.NVarChar(50), informe.Estado);
+  request.input("Progreso", sql.NVarChar(50), informe.Progreso);
+  request.output("NuevoInformeID", sql.Int);
+
+  const result = await request.execute("dbo.usp_AgregarInformeAlCaso");
+
+  const nuevoInformeID = result.output.NuevoInformeID as number;
+  if (!nuevoInformeID) {
+    throw new Error("No se pudo obtener el ID del nuevo informe.");
+  }
+  return nuevoInformeID;
 };

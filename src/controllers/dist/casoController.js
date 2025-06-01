@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.listarCasosController = exports.crearCasoController = void 0;
+exports.agregarInformeController = exports.listarCasosController = exports.crearCasoController = void 0;
 var casoService_1 = require("../services/casoService");
 /**
  * POST /api/casos
@@ -95,6 +95,58 @@ exports.listarCasosController = function (req, res, next) { return __awaiter(voi
             case 2:
                 error_2 = _a.sent();
                 res.status(500).json({ mensaje: error_2.message || 'Error al obtener los casos' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
+/**
+ * POST /api/informe
+ * Header esperado:
+ *   - correoElectronico: string
+ *   - idCaso: number
+ * Body esperado:
+ *   - tipoInforme: string
+ *   - descripcionBreve: string
+ *
+ * Devuelve el nuevo InformeID en JSON.
+ */
+exports.agregarInformeController = function (req, res, next) { return __awaiter(void 0, void 0, Promise, function () {
+    var correoElectronico, idCasoHeader, casoID, informe, nuevoInformeID, error_3;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                correoElectronico = req.header('correoElectronico');
+                idCasoHeader = req.header('idCaso');
+                if (!correoElectronico || !idCasoHeader) {
+                    res.status(400).json({ mensaje: 'Falta correoElectronico o idCaso en headers.' });
+                    return [2 /*return*/];
+                }
+                casoID = parseInt(idCasoHeader, 10);
+                if (isNaN(casoID)) {
+                    res.status(400).json({ mensaje: 'idCaso debe ser un número válido.' });
+                    return [2 /*return*/];
+                }
+                informe = req.body;
+                if (!informe.TipoInforme || !informe.DescripcionBreve) {
+                    res.status(400).json({ mensaje: 'Faltan tipoInforme o descripcionBreve en body.' });
+                    return [2 /*return*/];
+                }
+                informe.casoID = casoID;
+                informe.correoElectronico = correoElectronico;
+                return [4 /*yield*/, casoService_1.agregarInforme(informe)];
+            case 1:
+                nuevoInformeID = _a.sent();
+                res.status(201).json({
+                    mensaje: 'Informe agregado exitosamente',
+                    nuevoInformeID: nuevoInformeID
+                });
+                return [3 /*break*/, 3];
+            case 2:
+                error_3 = _a.sent();
+                // Si el SP lanzó RAISERROR o hubo otro fallo, respondo 500 con el mensaje
+                res.status(500).json({ mensaje: error_3.message || 'Error al agregar informe' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
         }

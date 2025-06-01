@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { crearCasoController, listarCasosController } from '../controllers/casoController';
+import { agregarInformeController, crearCasoController, listarCasosController } from '../controllers/casoController';
 
 const casos = Router();
 
 casos.get('/', listarCasosController);
 casos.post('/nuevo', crearCasoController);
+casos.post('/informe', agregarInformeController)
 
 export default casos;
