@@ -1,7 +1,11 @@
 // src/services/casoService.ts
-import { Informe } from '../models/Informe';
-import { spAgregarInformeAlCaso, spCrearCasoPorCorreo, spObtenerCasosPorCorreo } from './db';
-
+import { Informe } from "../models/Informe";
+import {
+  spAgregarInformeAlCaso,
+  spCrearCasoPorCorreo,
+  spObtenerCasosPorCorreo,
+  spReasignarCaso,
+} from "./db";
 
 export const crearCasoPorCorreo = async (
   correoElectronico: string,
@@ -15,7 +19,9 @@ export const crearCasoPorCorreo = async (
  * Obtiene todos los casos para el correo electrónico dado usando el procedimiento almacenado.
  * Retorna un array de objetos Caso.
  */
-export const listarCasos = async (correoElectronico: string): Promise<Caso[]> => {
+export const listarCasos = async (
+  correoElectronico: string
+): Promise<Caso[]> => {
   const casos = await spObtenerCasosPorCorreo(correoElectronico);
   return casos as Caso[];
 };
@@ -29,6 +35,17 @@ export const listarCasos = async (correoElectronico: string): Promise<Caso[]> =>
  * Devuelve el nuevo InformeID.
  */
 export const agregarInforme = async (informe: Informe): Promise<number> => {
-    const nuevoInformeID = await spAgregarInformeAlCaso(informe);
-    return nuevoInformeID;
+  const nuevoInformeID = await spAgregarInformeAlCaso(informe);
+  return nuevoInformeID;
+};
+
+/**
+ * Reasigna un caso. Devuelve el mensaje de motivo si falla o null si fue exitoso.
+ * @returns string | null
+ */
+export const reasignarCaso = async (
+    casoID: number,
+    nuevoFiscalID: number
+  ): Promise<string | null> => {
+    return spReasignarCaso(casoID, nuevoFiscalID);
   };

@@ -5,6 +5,7 @@ import router from './routes/index';
 import cors from 'cors';
 import { getSqlPool } from './services/db'; // Importa tu service para conectar a SQL Server
 import casos from './routes/casos';
+import fiscalesRouter from './routes/fiscales';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 
 app.use('/usuario', router);
 app.use('/casos', casos);
+app.use('/fiscales', fiscalesRouter);
 
 // Ruta para login de fiscal
 

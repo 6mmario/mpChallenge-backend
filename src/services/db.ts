@@ -103,14 +103,24 @@ export const spObtenerCasosPorCorreo = async (
  *   - descripcionBreve: string
  * Devuelve el nuevo InformeID generado (INT).
  */
-export const spAgregarInformeAlCaso = async (informe: Informe): Promise<number> => {
+export const spAgregarInformeAlCaso = async (
+  informe: Informe
+): Promise<number> => {
   const pool: ConnectionPool = await getSqlPool();
   const request = pool.request();
 
-  request.input("CorreoElectronico", sql.NVarChar(100), informe.correoElectronico);
+  request.input(
+    "CorreoElectronico",
+    sql.NVarChar(100),
+    informe.correoElectronico
+  );
   request.input("CasoID", sql.Int, informe.casoID);
   request.input("TipoInforme", sql.NVarChar(100), informe.TipoInforme);
-  request.input("DescripcionBreve", sql.NVarChar(255), informe.DescripcionBreve);
+  request.input(
+    "DescripcionBreve",
+    sql.NVarChar(255),
+    informe.DescripcionBreve
+  );
   request.input("Estado", sql.NVarChar(50), informe.Estado);
   request.input("Progreso", sql.NVarChar(50), informe.Progreso);
   request.output("NuevoInformeID", sql.Int);
@@ -122,4 +132,38 @@ export const spAgregarInformeAlCaso = async (informe: Informe): Promise<number> 
     throw new Error("No se pudo obtener el ID del nuevo informe.");
   }
   return nuevoInformeID;
+};
+
+/**
+ * Llama al SP usp_ReasignarCaso y captura @MotivoSalida.
+ * @param casoID         → ID del caso que se desea reasignar.
+ * @param nuevoFiscalID  → ID del fiscal al que se quiere reasignar el caso.
+ * @returns string | null → Si hay fallo, el texto de motivo; si éxitoso, null.
+ */
+export const spReasignarCaso = async (
+  casoID: number,
+  nuevoFiscalID: number
+): Promise<string | null> => {
+  const pool = await getSqlPool();
+  const request = pool.request();
+
+  request.input("CasoID", sql.Int, casoID);
+  request.input("NuevoFiscalID", sql.Int, nuevoFiscalID);
+  request.output("MotivoSalida", sql.NVarChar(255));
+
+  const result = await request.execute("dbo.usp_ReasignarCaso");
+  // @MotivoSalida vendrá en result.output.MotivoSalida
+  const motivo = result.output.MotivoSalida as string | null;
+  return motivo;
+};
+
+/**
+ * Llama al stored procedure dbo.usp_ListarFiscales y devuelve el recordset.
+ */
+export const spListarFiscales = async (): Promise<any[]> => {
+  const pool: ConnectionPool = await getSqlPool();
+  const request = pool.request();
+
+  const result = await request.execute("dbo.usp_ListarFiscales");
+  return result.recordset;
 };

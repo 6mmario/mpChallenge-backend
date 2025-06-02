@@ -1,6 +1,6 @@
 // src/controllers/casoController.ts
 import { Request, Response, NextFunction } from 'express';
-import { agregarInforme, crearCasoPorCorreo, listarCasos } from '../services/casoService';
+import { agregarInforme, crearCasoPorCorreo, listarCasos, reasignarCaso } from '../services/casoService';
 import { Informe } from '../models/Informe';
 /**
  * POST /api/casos
@@ -112,5 +112,39 @@ export const agregarInformeController = async (
   } catch (error: any) {
     // Si el SP lanzó RAISERROR o hubo otro fallo, respondo 500 con el mensaje
     res.status(500).json({ mensaje: error.message || 'Error al agregar informe' });
+  }
+};
+
+/**
+ * POST /api/casos/reasignar
+ * Body JSON: { casoID: number, nuevoFiscalID: number }
+ * Reasigna el caso; si SP devuelve motivo (string), responde 400 con ese texto; si null, 200.
+ */
+export const reasignarCasoController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { casoID, nuevoFiscalID } = req.body as {
+      casoID?: number;
+      nuevoFiscalID?: number;
+    };
+
+    if (typeof casoID !== 'number' || typeof nuevoFiscalID !== 'number') {
+      res.status(400).json({ mensaje: 'Faltan o no son válidos casoID o nuevoFiscalID.' });
+      return;
+    }
+
+    const motivo: string | null = await reasignarCaso(casoID, nuevoFiscalID);
+    if (motivo) {
+      // El SP devolvió un motivo de fallo
+      res.status(400).json({ mensaje: motivo });
+    } else {
+      // Éxito
+      res.status(200).json({ mensaje: 'Caso reasignado exitosamente' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ mensaje: error.message || 'Error al reasignar caso' });
   }
 };
