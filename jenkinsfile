@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        // Nombre de la imagen Docker; cámbialo si quieres otro repositorio/namespace
+        IMAGE_NAME = "mpchallenge-backend"
+        // Usamos la rama y el número de build como etiqueta
+        IMAGE_TAG  = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+        // URL de tu repositorio
+        GIT_REPO   = "https://github.com/6mmario/mpChallenge-backend.git"
+        // Ramo que vas a compilar
+        GIT_BRANCH = "main"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "🔄 Clonando ${GIT_REPO} (branch: ${GIT_BRANCH})..."
+                // Hacemos checkout directo con la URL en lugar de checkout scm
+                git branch: "${GIT_BRANCH}", url: "${GIT_REPO}"
+            }
+        }
+
+        stage('Instalar dependencias') {
+            steps {
+                echo "📥 Instalando dependencias con npm..."
+                // Si prefieres npm ci en vez de npm install, cámbialo aquí
+                sh 'npm install'
+            }
+        }
+
+        stage('Ejecutar pruebas') {
+            steps {
+                echo "🧪 Corriendo tests..."
+                // Asume que en package.json tienes "test": "jest" o similar
+                sh 'npm test'
+            }
+        }
+
+        stage('Compilar TypeScript') {
+            steps {
+                echo "🚧 Compilando TypeScript..."
+                // Asume que en package.json existe "build": "tsc -p tsconfig.json"
+                sh 'npm run build'
+            }
+        }
+
+        stage('Construir imagen Docker') {
+            steps {
+                echo "🐳 Construyendo imagen Docker ${IMAGE_NAME}:${IMAGE_TAG}..."
+                sh """
+                   docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline finalizado con éxito. Imagen: ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
+        failure {
+            echo "❌ Algo falló durante el pipeline."
+        }
+    }
+}
